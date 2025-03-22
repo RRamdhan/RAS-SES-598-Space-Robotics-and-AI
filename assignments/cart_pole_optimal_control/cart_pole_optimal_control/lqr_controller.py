@@ -39,8 +39,8 @@ class CartPoleLQRController(Node):
         # State vector: [x, ẋ, θ, θ̇]
         #self.Q = np.diag([100.0, 50.0, 1000.0, 10.0])  # State cost
         #self.R = np.array([[0.1]])  # Control cost
-        self.Q = np.diag([10.0, 1.0, 3.0, 1.0])  # State cost
-        self.R = np.array([[100]])  # Control cost
+        self.Q = np.diag([1000.0, 200.0, 7000.0, 500.0])  # State cost
+        self.R = np.array([[0.1]])  # Control cost
 
         # Compute LQR gain matrix
         self.K = self.compute_lqr_gain()
@@ -81,7 +81,7 @@ class CartPoleLQRController(Node):
         self.cart_velocity_rec = deque(maxlen=1000)
         self.pole_angle_rec = deque(maxlen=1000)
         self.pole_velocity_rec = deque(maxlen=1000)
-
+        print("###############################################")
         self.get_logger().info('Cart-Pole LQR Controller initialized')
     
     def compute_lqr_gain(self):
