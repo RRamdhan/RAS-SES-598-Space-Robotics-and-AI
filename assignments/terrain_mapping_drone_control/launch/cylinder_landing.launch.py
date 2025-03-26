@@ -65,7 +65,14 @@ def generate_launch_description():
         ],
         output='screen'
     )
-
+    
+    navigate_node = Node(
+    package='terrain_mapping_drone_control',
+    executable='navigate.py',
+    name='navigate_node',
+    output='screen'
+    )
+    
     # Bridge node for camera and odometry
     bridge = Node(
         package='ros_gz_bridge',
@@ -135,5 +142,9 @@ def generate_launch_description():
         TimerAction(
             period=3.0,
             actions=[bridge]
+        ),
+        TimerAction(
+            period=5.0,
+            actions=[navigate_node]
         )
     ]) 
