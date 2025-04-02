@@ -188,54 +188,35 @@ class SpiralTrajectory(Node):
         
         return x, y, z, yaw
 
-    def timer_callback(self):
-        """Timer callback for control loop."""
-        if self.offboard_setpoint_counter == 10:
-            self.engage_offboard_mode()
-            self.arm()
-            self.start_time = time.time()
+def timer_callback(self):
+    """Timer callback for control loop."""
+    if self.offboard_setpoint_counter == 10:
+        self.engage_offboard_mode()
+        self.arm()
+        self.start_time = time.time()
 
-        self.publish_offboard_control_mode()
+    self.publish_offboard_control_mode()
 
-        if self.state == "TAKEOFF":
-            if not self.is_at_target_height():
-                self.publish_trajectory_setpoint(
-                    x=0.0,
-                    y=0.0,
-                    z=-self.INITIAL_HEIGHT,
-                    yaw=0.0
-                )
-                self.get_logger().info(f"Taking off... Current height: {-self.vehicle_odometry.position[2]:.2f}m")
-            else:
-                self.state = "SPIRAL"
-                self.start_time = time.time()
-                self.get_logger().info("Starting spiral descent")
-
-        elif self.state == "SPIRAL":
-            time_elapsed = time.time() - self.start_time
-            x, y, z, yaw = self.calculate_spiral_position(time_elapsed)
-            
-            # Check if we've reached minimum height
-            if -z <= self.MIN_HEIGHT:
-                self.state = "LAND"
-                self.get_logger().info("Reached minimum height, preparing to land")
-            else:
-                self.publish_trajectory_setpoint(x=x, y=y, z=z, yaw=yaw)
-                self.get_logger().info(
-                    f"Spiral descent... Height: {-z:.2f}m, "
-                    f"Position: ({x:.2f}, {y:.2f})"
-                )
-
-        elif self.state == "LAND":
+    if self.state == "TAKEOFF":
+        if not self.is_at_target_height():
             self.publish_trajectory_setpoint(
                 x=0.0,
                 y=0.0,
-                z=0.0,
+                z=-self.INITIAL_HEIGHT,
                 yaw=0.0
             )
-            self.get_logger().info("Landing...")
+            self.get_logger().info(f"Taking off... Current height: {-self.vehicle_odometry.position[2]:.2f}m")
+        else:
+            # Hover at the takeoff height
+            self.publish_trajectory_setpoint(
+                x=0.0,
+                y=0.0,
+                z=-self.INITIAL_HEIGHT,
+                yaw=0.0
+            )
+            self.get_logger().info(f"Hovering at {self.INITIAL_HEIGHT:.2f}m")
 
-        self.offboard_setpoint_counter += 1
+    self.offboard_setpoint_counter += 1
 
 def main():
     print('Starting spiral trajectory...')
