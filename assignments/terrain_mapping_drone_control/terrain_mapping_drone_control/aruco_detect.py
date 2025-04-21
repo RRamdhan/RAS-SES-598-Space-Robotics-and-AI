@@ -55,6 +55,7 @@ class ArucoTracker(Node):
         self.debug_image_pub = self.create_publisher(Image, '/aruco/debug_image', 10)
         self.marker_pose_pub = self.create_publisher(String, '/aruco/marker_pose', 10)
         
+        
         # TF broadcaster
         self.tf_broadcaster = TransformBroadcaster(self)
         
@@ -262,6 +263,7 @@ class ArucoTracker(Node):
                                 f"z:{marker_position[2]:.2f}m"
                             )
                             self.marker_pose_pub.publish(pose_msg)
+                            self.get_logger().info(pose_msg.data)
                             
                             # Calculate and draw marker center
                             marker_center = corners[i][0].mean(axis=0)
