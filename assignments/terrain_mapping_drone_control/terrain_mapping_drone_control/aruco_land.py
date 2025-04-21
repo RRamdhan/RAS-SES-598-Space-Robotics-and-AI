@@ -41,7 +41,7 @@ class ArucoLandingNode(Node):
 
         self.aruco_subscriber = self.create_subscription(
             PointStamped,
-            '/aruco/marker_position',
+            '/aruco/marker_pose',
             self.marker_callback,
             qos_default)
 
