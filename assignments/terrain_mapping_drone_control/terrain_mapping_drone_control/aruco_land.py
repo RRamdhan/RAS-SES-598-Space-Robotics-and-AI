@@ -7,8 +7,7 @@ import math
 import time
 
 from px4_msgs.msg import VehicleOdometry, OffboardControlMode, VehicleCommand, VehicleStatus, TrajectorySetpoint
-from std_msgs.msg import Float64
-from geometry_msgs.msg import PointStamped
+from std_msgs.msg import String
 
 class ArucoLandingNode(Node):
     def __init__(self):
@@ -40,7 +39,7 @@ class ArucoLandingNode(Node):
             self.vehicle_status_callback, qos_profile)
 
         self.aruco_subscriber = self.create_subscription(
-            PointStamped,
+            String,
             '/aruco/marker_pose',
             self.marker_callback,
             qos_default)
@@ -54,8 +53,16 @@ class ArucoLandingNode(Node):
         self.create_timer(0.1, self.timer_callback)
 
     def marker_callback(self, msg):
-        self.marker_position = msg.point
-        self.get_logger().info(f"Received ArUco marker position: x={msg.point.x:.2f}, y={msg.point.y:.2f}, z={msg.point.z:.2f}")
+        try:
+            # Example string format: "Marker 0 detected at x:1.23m, y:0.45m, z:0.67m"
+            parts = msg.data.strip().split(' ')
+            x = float(parts[5][2:-1])  # remove 'x:' and 'm'
+            y = float(parts[6][2:-1])
+            z = float(parts[7][2:-1])
+            self.marker_position = (x, y, z)
+            self.get_logger().info(f"Parsed marker position: x={x:.2f}, y={y:.2f}, z={z:.2f}")
+        except Exception as e:
+            self.get_logger().error(f"Failed to parse marker_pose message: {str(e)}")
 
     def vehicle_odometry_callback(self, msg):
         self.vehicle_odometry = msg
@@ -111,12 +118,8 @@ class ArucoLandingNode(Node):
         self.publish_offboard_control_mode()
 
         if self.marker_position:
-            self.publish_trajectory_setpoint(
-                x=self.marker_position.x,
-                y=self.marker_position.y,
-                z=0.3,
-                yaw=0.0)
-
+            x, y, z = self.marker_position
+            self.publish_trajectory_setpoint(x=x, y=y, z=0.3, yaw=0.0)
             if not self.landing_started:
                 self.get_logger().info("Landing on ArUco marker...")
                 self.publish_vehicle_command(VehicleCommand.VEHICLE_CMD_NAV_LAND)
