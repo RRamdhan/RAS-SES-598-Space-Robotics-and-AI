@@ -200,6 +200,7 @@ class ArucoTracker(Node):
                                     f"z:{marker_position[2]:.2f}m"
                                 )
                                 self.marker_pose_pub.publish(pose_msg)
+                                self.get_logger().info(pose_msg.data)
                                 
                                 # Calculate and draw marker center
                                 marker_center = corners[i][0].mean(axis=0)
