@@ -2,80 +2,141 @@
 
 import rclpy
 from rclpy.node import Node
+from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy, DurabilityPolicy
+import math
+import time
+
+from px4_msgs.msg import VehicleOdometry, OffboardControlMode, VehicleCommand, VehicleStatus, TrajectorySetpoint
+from std_msgs.msg import Float64
 from geometry_msgs.msg import PointStamped
-from px4_msgs.msg import TrajectorySetpoint, VehicleCommand, OffboardControlMode
-from rclpy.qos import QoSProfile
 
-class ArucoLandingController(Node):
+class ArucoLandingNode(Node):
     def __init__(self):
-        super().__init__('aruco_landing_controller')
+        super().__init__('aruco_landing_node')
 
-        qos = QoSProfile(depth=10)
+        qos_profile = QoSProfile(
+            reliability=ReliabilityPolicy.BEST_EFFORT,
+            durability=DurabilityPolicy.TRANSIENT_LOCAL,
+            history=HistoryPolicy.KEEP_LAST,
+            depth=1
+        )
+
+        qos_default = QoSProfile(depth=10)
+
+        # Publishers
+        self.offboard_control_mode_publisher = self.create_publisher(
+            OffboardControlMode, '/fmu/in/offboard_control_mode', qos_profile)
+        self.trajectory_setpoint_publisher = self.create_publisher(
+            TrajectorySetpoint, '/fmu/in/trajectory_setpoint', qos_profile)
+        self.vehicle_command_publisher = self.create_publisher(
+            VehicleCommand, '/fmu/in/vehicle_command', qos_profile)
 
         # Subscribers
-        self.subscription = self.create_subscription(
+        self.vehicle_odometry_subscriber = self.create_subscription(
+            VehicleOdometry, '/fmu/out/vehicle_odometry', 
+            self.vehicle_odometry_callback, qos_profile)
+        self.vehicle_status_subscriber = self.create_subscription(
+            VehicleStatus, '/fmu/out/vehicle_status',
+            self.vehicle_status_callback, qos_profile)
+
+        self.aruco_subscriber = self.create_subscription(
             PointStamped,
             '/aruco/marker_position',
             self.marker_callback,
-            qos)
+            qos_default)
 
-        # Publishers
-        self.trajectory_pub = self.create_publisher(
-            TrajectorySetpoint, '/fmu/in/trajectory_setpoint', qos)
-        self.command_pub = self.create_publisher(
-            VehicleCommand, '/fmu/in/vehicle_command', qos)
-        self.mode_pub = self.create_publisher(
-            OffboardControlMode, '/fmu/in/offboard_control_mode', qos)
-
-        self.timer = self.create_timer(0.1, self.control_loop)
-
-        # Marker target
         self.marker_position = None
         self.landing_started = False
+        self.offboard_setpoint_counter = 0
+        self.vehicle_odometry = VehicleOdometry()
+
+        # Create a timer to publish control commands
+        self.create_timer(0.1, self.timer_callback)
 
     def marker_callback(self, msg):
         self.marker_position = msg.point
-        self.get_logger().info(
-            f"Received ArUco Marker Position: x={msg.point.x:.2f}, y={msg.point.y:.2f}, z={msg.point.z:.2f}")
+        self.get_logger().info(f"Received ArUco marker position: x={msg.point.x:.2f}, y={msg.point.y:.2f}, z={msg.point.z:.2f}")
 
-    def control_loop(self):
-        if self.marker_position is None:
-            return  # wait for marker
+    def vehicle_odometry_callback(self, msg):
+        self.vehicle_odometry = msg
 
-        # Step 1: Set Offboard mode
-        offboard_mode = OffboardControlMode()
-        offboard_mode.position = True
-        self.mode_pub.publish(offboard_mode)
+    def vehicle_status_callback(self, msg):
+        pass  # No-op unless status needed
 
-        # Step 2: Fly above marker first
-        landing_altitude = 0.3  # meters above ground
+    def arm(self):
+        self.publish_vehicle_command(
+            VehicleCommand.VEHICLE_CMD_COMPONENT_ARM_DISARM, param1=1.0)
+        self.get_logger().info("Arm command sent")
 
-        sp = TrajectorySetpoint()
-        sp.position = [self.marker_position.x, self.marker_position.y, landing_altitude]
-        sp.yaw = 0.0
-        self.trajectory_pub.publish(sp)
+    def engage_offboard_mode(self):
+        self.publish_vehicle_command(
+            VehicleCommand.VEHICLE_CMD_DO_SET_MODE, param1=1.0, param2=6.0)
+        self.get_logger().info("Offboard mode command sent")
 
-        # Step 3: Trigger landing once close enough
-        if not self.landing_started and self.marker_position.z < 0.6:
-            self.get_logger().info("Initiating landing sequence")
-            self.trigger_land()
-            self.landing_started = True
+    def publish_offboard_control_mode(self):
+        msg = OffboardControlMode()
+        msg.position = True
+        msg.velocity = False
+        msg.acceleration = False
+        msg.attitude = False
+        msg.body_rate = False
+        msg.timestamp = int(self.get_clock().now().nanoseconds / 1000)
+        self.offboard_control_mode_publisher.publish(msg)
 
-    def trigger_land(self):
-        cmd = VehicleCommand()
-        cmd.command = VehicleCommand.VEHICLE_CMD_NAV_LAND
-        cmd.param1 = 0.0
-        self.command_pub.publish(cmd)
+    def publish_trajectory_setpoint(self, x=0.0, y=0.0, z=0.0, yaw=0.0):
+        msg = TrajectorySetpoint()
+        msg.position = [x, y, z]
+        msg.yaw = yaw
+        msg.timestamp = int(self.get_clock().now().nanoseconds / 1000)
+        self.trajectory_setpoint_publisher.publish(msg)
 
+    def publish_vehicle_command(self, command, param1=0.0, param2=0.0):
+        msg = VehicleCommand()
+        msg.param1 = param1
+        msg.param2 = param2
+        msg.command = command
+        msg.target_system = 1
+        msg.target_component = 1
+        msg.source_system = 1
+        msg.source_component = 1
+        msg.from_external = True
+        msg.timestamp = int(self.get_clock().now().nanoseconds / 1000)
+        self.vehicle_command_publisher.publish(msg)
 
-def main(args=None):
-    rclpy.init(args=args)
-    node = ArucoLandingController()
-    rclpy.spin(node)
-    node.destroy_node()
-    rclpy.shutdown()
+    def timer_callback(self):
+        if self.offboard_setpoint_counter == 10:
+            self.engage_offboard_mode()
+            self.arm()
 
+        self.publish_offboard_control_mode()
+
+        if self.marker_position:
+            self.publish_trajectory_setpoint(
+                x=self.marker_position.x,
+                y=self.marker_position.y,
+                z=0.3,
+                yaw=0.0)
+
+            if not self.landing_started:
+                self.get_logger().info("Landing on ArUco marker...")
+                self.publish_vehicle_command(VehicleCommand.VEHICLE_CMD_NAV_LAND)
+                self.landing_started = True
+        else:
+            self.get_logger().info("Waiting for ArUco marker position...")
+
+        self.offboard_setpoint_counter += 1
+
+def main():
+    print('Starting ArUco landing node...')
+    rclpy.init()
+    node = ArucoLandingNode()
+    try:
+        rclpy.spin(node)
+    except KeyboardInterrupt:
+        print('Shutting down...')
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
 
 if __name__ == '__main__':
     main()
-
