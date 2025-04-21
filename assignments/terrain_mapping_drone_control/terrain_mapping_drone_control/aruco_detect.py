@@ -194,6 +194,7 @@ class ArucoTracker(Node):
                                 # Publish marker pose as text
                                 pose_msg = String()
                                 pose_msg.data = (
+                                    f" {ids[i]}"
                                     f"Marker {ids[i][0]} detected at "
                                     f"x:{marker_position[0]:.2f}m, "
                                     f"y:{marker_position[1]:.2f}m, "
