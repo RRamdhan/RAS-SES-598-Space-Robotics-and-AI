@@ -4,7 +4,7 @@ import rclpy
 from rclpy.node import Node
 import cv2
 import numpy as np
-from cv_bridge import CvBridge
+from cv-bridge import CvBridge
 from sensor_msgs.msg import Image
 
 class ArucoDetector(Node):
