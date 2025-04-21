@@ -144,7 +144,7 @@ class ArucoTracker(Node):
                     # Estimate pose for each marker
                     if self.detector is not None:
                         # OpenCV 4.7+ API
-                        for i in range(len(ids)):
+                        for idx, i in enumerate(range(len(ids)), 0):
                             marker_points = np.array([
                                 [-self.marker_size/2, self.marker_size/2, 0],
                                 [self.marker_size/2, self.marker_size/2, 0],
@@ -194,8 +194,8 @@ class ArucoTracker(Node):
                                 # Publish marker pose as text
                                 pose_msg = String()
                                 pose_msg.data = (
-                                    f" {ids[i]}"
-                                    f"Marker {ids[i][0]} detected at "
+                                    #f"Marker {ids[i][0]} detected at "
+                                    f"Marker {idx} detected at "
                                     f"x:{marker_position[0]:.2f}m, "
                                     f"y:{marker_position[1]:.2f}m, "
                                     f"z:{marker_position[2]:.2f}m"
