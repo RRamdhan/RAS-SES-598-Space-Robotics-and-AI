@@ -13,6 +13,10 @@ class ArucoLandingNode(Node):
     def __init__(self):
         super().__init__('aruco_landing_node')
 
+        self.ref_lat = None
+        self.ref_lon = None
+        self.ref_alt = None
+        
         qos_profile = QoSProfile(
             reliability=ReliabilityPolicy.BEST_EFFORT,
             durability=DurabilityPolicy.TRANSIENT_LOCAL,
@@ -78,11 +82,34 @@ class ArucoLandingNode(Node):
         self.vehicle_odometry = msg
 
     def global_position_callback(self, msg):
-        self.global_position = (
-            msg.lat / 1e7,
-            msg.lon / 1e7,
-            msg.alt / 1e3)
-        self.get_logger().debug(f"Global position: lat={self.global_position[0]:.7f}, lon={self.global_position[1]:.7f}, alt={self.global_position[2]:.2f}")
+        lat = msg.lat / 1e7
+        lon = msg.lon / 1e7
+        alt = msg.alt / 1e3
+    
+        if self.ref_lat is None:
+            # Initialize the reference location
+            self.ref_lat = lat
+            self.ref_lon = lon
+            self.ref_alt = alt
+            self.get_logger().info(f"Reference GPS set: lat={lat:.7f}, lon={lon:.7f}, alt={alt:.2f}")
+    
+        # Constants
+        earth_radius = 6378137.0  # in meters
+        deg_to_rad = math.pi / 180.0
+    
+        # Calculate local ENU (x: East, y: North, z: Up)
+        d_lat = lat - self.ref_lat
+        d_lon = lon - self.ref_lon
+        d_alt = alt - self.ref_alt
+    
+        x = d_lon * deg_to_rad * earth_radius * math.cos(self.ref_lat * deg_to_rad)
+        y = d_lat * deg_to_rad * earth_radius
+        z = -d_alt  # down is positive in PX4 NED, ENU uses Up as positive
+    
+        self.global_position = (lat, lon, alt)
+        self.local_from_gps = (x, y, z)
+    
+        self.get_logger().debug(f"Converted GPS to local: x={x:.2f}, y={y:.2f}, z={z:.2f}")
 
     def vehicle_status_callback(self, msg):
         pass
