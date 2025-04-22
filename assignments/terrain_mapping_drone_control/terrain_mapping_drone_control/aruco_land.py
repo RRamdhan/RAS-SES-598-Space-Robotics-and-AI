@@ -82,11 +82,46 @@ class ArucoLandingNode(Node):
         self.vehicle_odometry = msg
 
     def global_position_callback(self, msg):
-        self.global_position = (
-            msg.lat, # / 1e7,
-            msg.lon, #/ 1e7,
-            msg.alt) #/ 1e3)
-        self.get_logger().debug(f"Global position: lat={self.global_position[0]:.7f}, lon={self.global_position[1]:.7f}, alt={self.global_position[2]:.2f}")
+        # Convert raw GPS values to standard units
+        lat = msg.lat #/ 1e7
+        lon = msg.lon #/ 1e7
+        alt = msg.alt #/ 1e3  # in meters
+    
+        # Initialize reference GPS on first message
+        if not hasattr(self, 'ref_lat'):
+            self.ref_lat = lat
+            self.ref_lon = lon
+            self.ref_alt = alt
+            self.get_logger().info(f"Set reference GPS origin: lat={lat:.7f}, lon={lon:.7f}, alt={alt:.2f}")
+        
+        # Earth radius and conversion constants
+        earth_radius = 6378137.0  # meters
+        deg_to_rad = math.pi / 180.0
+        
+        # Compute ENU approximation (relative to ref point)
+        d_lat = lat - self.ref_lat
+        d_lon = lon - self.ref_lon
+        d_alt = alt - self.ref_alt
+        
+        x = d_lon * deg_to_rad * earth_radius * math.cos(self.ref_lat * deg_to_rad)  # East
+        y = d_lat * deg_to_rad * earth_radius  # North
+        z = -d_alt  # Up is positive in Gazebo (so invert the altitude diff)
+        
+        # Store global GPS and computed local position
+        self.global_position = (lat, lon, alt)
+        self.local_from_gps = (x, y, z)
+        
+        # Optional logging
+        self.get_logger().debug(
+            f"Global GPS: lat={lat:.7f}, lon={lon:.7f}, alt={alt:.2f} | "
+            f"Local ENU: x={x:.2f}, y={y:.2f}, z={z:.2f}")
+    
+    # def global_position_callback(self, msg):
+    #     self.global_position = (
+    #         msg.lat, # / 1e7,
+    #         msg.lon, #/ 1e7,
+    #         msg.alt) #/ 1e3)
+    #     self.get_logger().debug(f"Global position: lat={self.global_position[0]:.7f}, lon={self.global_position[1]:.7f}, alt={self.global_position[2]:.2f}")
       
     def vehicle_status_callback(self, msg):
         pass
