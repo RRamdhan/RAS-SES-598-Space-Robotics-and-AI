@@ -5,7 +5,6 @@ from rclpy.node import Node
 from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy, DurabilityPolicy
 import math
 import time
-import pdb
 
 from px4_msgs.msg import VehicleOdometry, OffboardControlMode, VehicleCommand, VehicleStatus, TrajectorySetpoint, VehicleGlobalPosition
 from std_msgs.msg import String
@@ -63,7 +62,6 @@ class ArucoLandingNode(Node):
 
             # Get current drone position from /odom
             base_x, base_y, base_z = self.current_position
-            pdb.set_trace()
             abs_x = base_x + rel_x
             abs_y = base_y + rel_y
             abs_z = base_z + rel_z
