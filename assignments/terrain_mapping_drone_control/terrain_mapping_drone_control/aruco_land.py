@@ -67,9 +67,9 @@ class ArucoLandingNode(Node):
     def marker_callback(self, msg):
         try:
             parts = msg.data.strip().split(' ')
-            x = float(parts[5][2:-1])
-            y = float(parts[6][2:-1])
-            z = float(parts[7][2:-1])
+            x = float(parts[4][2:-2])
+            y = float(parts[5][2:-2])
+            z = float(parts[6][2:-2])
             self.marker_position = (x, y, z)
             self.get_logger().info(f"Parsed marker position: x={x:.2f}, y={y:.2f}, z={z:.2f}")
         except Exception as e:
