@@ -5,6 +5,7 @@ from rclpy.node import Node
 from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy, DurabilityPolicy
 import math
 import time
+import pdb
 
 from px4_msgs.msg import VehicleOdometry, OffboardControlMode, VehicleCommand, VehicleStatus, TrajectorySetpoint, VehicleGlobalPosition
 from std_msgs.msg import String
@@ -36,24 +37,13 @@ class ArucoLandingNode(Node):
             VehicleOdometry, '/fmu/out/vehicle_odometry', 
             self.vehicle_odometry_callback, qos_profile)
         self.vehicle_status_subscriber = self.create_subscription(
-            VehicleStatus, '/fmu/out/vehicle_status',
-            self.vehicle_status_callback, qos_profile)
-
+            VehicleStatus, '/fmu/out/vehicle_status', qos_profile)
         self.global_position_subscriber = self.create_subscription(
-            VehicleGlobalPosition, '/fmu/out/vehicle_global_position',
-            self.global_position_callback, qos_profile)
-
+            VehicleGlobalPosition, '/fmu/out/vehicle_global_position', qos_profile)
         self.aruco_subscriber = self.create_subscription(
-            String,
-            '/aruco/marker_pose',
-            self.marker_callback,
-            qos_default)
-
+            String, '/aruco/marker_pose', self.marker_callback, qos_default)
         self.gazebo_pose_subscriber = self.create_subscription(
-            Odometry,
-            '/odom',
-            self.odom_callback,
-            qos_default)
+            Odometry, '/odom', self.odom_callback, qos_default)
 
         self.marker_position = None
         self.landing_started = False
@@ -67,11 +57,21 @@ class ArucoLandingNode(Node):
     def marker_callback(self, msg):
         try:
             parts = msg.data.strip().split(' ')
-            x = float(parts[4][2:-2])
-            y = float(parts[5][2:-2])
-            z = float(parts[6][2:-2])
-            self.marker_position = (x, y, z)
-            self.get_logger().info(f"Parsed marker position: x={x:.2f}, y={y:.2f}, z={z:.2f}")
+            rel_x = float(parts[4][2:-2])
+            rel_y = float(parts[5][2:-2])
+            rel_z = float(parts[6][2:-2])
+
+            # Get current drone position from /odom
+            base_x, base_y, base_z = self.current_position
+            pdb.set_trace()
+            abs_x = base_x + rel_x
+            abs_y = base_y + rel_y
+            abs_z = base_z + rel_z
+
+            self.marker_position = (abs_x, abs_y, abs_z)
+            self.get_logger().info(
+                f"Parsed REL marker position: x={rel_x:.2f}, y={rel_y:.2f}, z={rel_z:.2f}\n"
+                f"Computed ABS marker position: x={abs_x:.2f}, y={abs_y:.2f}, z={abs_z:.2f}")
         except Exception as e:
             self.get_logger().error(f"Failed to parse marker_pose message: {str(e)}")
 
