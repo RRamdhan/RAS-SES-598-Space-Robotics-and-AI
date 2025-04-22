@@ -6,7 +6,7 @@ from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy, DurabilityPo
 import math
 import time
 
-from px4_msgs.msg import VehicleOdometry, OffboardControlMode, VehicleCommand, VehicleStatus, TrajectorySetpoint
+from px4_msgs.msg import VehicleOdometry, OffboardControlMode, VehicleCommand, VehicleStatus, TrajectorySetpoint, VehicleGlobalPosition
 from std_msgs.msg import String
 from nav_msgs.msg import Odometry
 
@@ -39,6 +39,10 @@ class ArucoLandingNode(Node):
             VehicleStatus, '/fmu/out/vehicle_status',
             self.vehicle_status_callback, qos_profile)
 
+        self.global_position_subscriber = self.create_subscription(
+            VehicleGlobalPosition, '/fmu/out/vehicle_global_position',
+            self.global_position_callback, qos_profile)
+
         self.aruco_subscriber = self.create_subscription(
             String,
             '/aruco/marker_pose',
@@ -56,8 +60,8 @@ class ArucoLandingNode(Node):
         self.offboard_setpoint_counter = 0
         self.vehicle_odometry = VehicleOdometry()
         self.current_position = (0.0, 0.0, 0.0)
+        self.global_position = (0.0, 0.0, 0.0)
 
-        # Create a timer to publish control commands
         self.create_timer(0.1, self.timer_callback)
 
     def marker_callback(self, msg):
@@ -74,6 +78,13 @@ class ArucoLandingNode(Node):
     def vehicle_odometry_callback(self, msg):
         self.vehicle_odometry = msg
 
+    def global_position_callback(self, msg):
+        self.global_position = (
+            msg.lat / 1e7,
+            msg.lon / 1e7,
+            msg.alt / 1e3)
+        self.get_logger().debug(f"Global position: lat={self.global_position[0]:.7f}, lon={self.global_position[1]:.7f}, alt={self.global_position[2]:.2f}")
+
     def vehicle_status_callback(self, msg):
         pass
 
@@ -82,7 +93,6 @@ class ArucoLandingNode(Node):
             msg.pose.pose.position.x,
             msg.pose.pose.position.y,
             msg.pose.pose.position.z)
-        self.get_logger().debug(f"Current Gazebo position: x={self.current_position[0]:.2f}, y={self.current_position[1]:.2f}, z={self.current_position[2]:.2f}")
 
     def arm(self):
         self.publish_vehicle_command(
@@ -135,12 +145,12 @@ class ArucoLandingNode(Node):
             x, y, z = self.marker_position
             self.publish_trajectory_setpoint(x=x, y=y, z=0.3, yaw=0.0)
             if not self.landing_started:
-                self.get_logger().info("Landing on ArUco marker...")
+                self.get_logger().info(f"Landing on marker near global position: lat={self.global_position[0]:.7f}, lon={self.global_position[1]:.7f}, alt={self.global_position[2]:.2f}")
                 self.publish_vehicle_command(VehicleCommand.VEHICLE_CMD_NAV_LAND)
                 self.landing_started = True
         else:
             cx, cy, cz = self.current_position
-            self.get_logger().info(f"Waiting for ArUco marker position... Current drone position: x={cx:.2f}, y={cy:.2f}, z={cz:.2f}")
+            self.get_logger().info(f"Waiting for ArUco marker... Local pos: x={cx:.2f}, y={cy:.2f}, z={cz:.2f} | Global pos: lat={self.global_position[0]:.7f}, lon={self.global_position[1]:.7f}, alt={self.global_position[2]:.2f}")
 
         self.offboard_setpoint_counter += 1
 
