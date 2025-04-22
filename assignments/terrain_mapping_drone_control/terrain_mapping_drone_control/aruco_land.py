@@ -102,17 +102,50 @@ class ArucoLandingNode(Node):
         y = (N + alt) * math.cos(lat_rad) * math.sin(lon_rad)
         z = (N * (1 - e_sq) + alt) * math.sin(lat_rad)
 
-        self.global_position = (
-            x,
-            y,
-            z)
+
         
         # self.global_position = (
         #     msg.lat, # / 1e7,
         #     msg.lon, #/ 1e7,
         #     msg.alt) #/ 1e3)
+        # self.get_logger().debug(f"Global position: lat={self.global_position[0]:.7f}, lon={self.global_position[1]:.7f}, alt={self.global_position[2]:.2f}")
+
+        if not hasattr(self, 'ref_ecef'):
+            self.ref_ecef = (x, y, z)
+            self.ref_lat = msg.lat
+            self.ref_lon = msg.lon
+            self.ref_alt = msg.alt
+            self.get_logger().info("Set reference ECEF and LLA origin")
+    
+        # Compute ENU from ECEF difference
+        dx = x - self.ref_ecef[0]
+        dy = y - self.ref_ecef[1]
+        dz = z - self.ref_ecef[2]
+    
+        # Precompute ref radians
+        ref_lat_rad = self.ref_lat * deg_to_rad
+        ref_lon_rad = self.ref_lon * deg_to_rad
+    
+        sin_lat = math.sin(ref_lat_rad)
+        cos_lat = math.cos(ref_lat_rad)
+        sin_lon = math.sin(ref_lon_rad)
+        cos_lon = math.cos(ref_lon_rad)
+    
+        # Rotation matrix from ECEF to ENU
+        t = [
+            [-sin_lon,              cos_lon,             0],
+            [-sin_lat*cos_lon, -sin_lat*sin_lon, cos_lat],
+            [cos_lat*cos_lon,  cos_lat*sin_lon,  sin_lat]
+        ]
+    
+        x_enu = t[0][0]*dx + t[0][1]*dy + t[0][2]*dz
+        y_enu = t[1][0]*dx + t[1][1]*dy + t[1][2]*dz
+        z_enu = t[2][0]*dx + t[2][1]*dy + t[2][2]*dz
+        self.global_position = (
+            x_enu,
+            y_enu,
+            z_enu)
         self.get_logger().debug(f"Global position: lat={self.global_position[0]:.7f}, lon={self.global_position[1]:.7f}, alt={self.global_position[2]:.2f}")
-      
     def vehicle_status_callback(self, msg):
         pass
 
