@@ -92,6 +92,7 @@ class ArucoLandingNode(Node):
         # Convert to radians
         lat_rad = msg.lat * deg_to_rad
         lon_rad = msg.lon * deg_to_rad
+        alt = msg.alt
         
         # Prime vertical radius of curvature
         N = a / math.sqrt(1 - e_sq * math.sin(lat_rad)**2)
