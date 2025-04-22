@@ -83,9 +83,9 @@ class ArucoLandingNode(Node):
 
     def global_position_callback(self, msg):
         self.global_position = (
-            msg.lat / 1e7,
-            msg.lon / 1e7,
-            msg.alt / 1e3)
+            msg.lat, # / 1e7,
+            msg.lon, #/ 1e7,
+            msg.alt) #/ 1e3)
         self.get_logger().debug(f"Global position: lat={self.global_position[0]:.7f}, lon={self.global_position[1]:.7f}, alt={self.global_position[2]:.2f}")
       
     def vehicle_status_callback(self, msg):
