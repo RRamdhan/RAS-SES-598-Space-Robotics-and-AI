@@ -68,6 +68,7 @@ class ArucoLandingNode(Node):
         self.vehicle_odometry = VehicleOdometry()
         self.current_position = (0.0, 0.0, 0.0)
         self.global_position = (0.0, 0.0, 0.0)
+        self.local_position = (0.0, 0.0, 0.0)
 
         self.create_timer(0.1, self.timer_callback)
 
