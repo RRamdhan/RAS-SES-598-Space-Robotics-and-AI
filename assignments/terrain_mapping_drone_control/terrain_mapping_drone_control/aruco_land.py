@@ -45,7 +45,11 @@ class ArucoLandingNode(Node):
         self.global_position_subscriber = self.create_subscription(
             VehicleGlobalPosition, '/fmu/out/vehicle_global_position',
             self.global_position_callback, qos_profile)
-
+        
+        self.local_position_subscriber = self.create_subscription(
+            VehicleGlobalPosition, '/fmu/out/vehicle_local_position',
+            self.local_position_callback, qos_profile)
+        
         self.aruco_subscriber = self.create_subscription(
             String,
             '/aruco/marker_pose',
@@ -80,8 +84,13 @@ class ArucoLandingNode(Node):
 
     def vehicle_odometry_callback(self, msg):
         self.vehicle_odometry = msg
-
-  
+        
+    def local_position_callback(self, msg):
+        self.local_position = (
+            msg.x,
+            msg.y,
+            msg.z)
+        
     def global_position_callback(self, msg):
 
         # Constants
@@ -205,7 +214,9 @@ class ArucoLandingNode(Node):
 
         if self.marker_position:
             x, y, z = self.marker_position
-            self.publish_trajectory_setpoint(x=x, y=y, z=0.3, yaw=0.0)
+            x_cur, y_cur, z_cur = self.local_position
+            x_final, y_final, z_final = x_cur + x, y_cur + y, z_cur
+            self.publish_trajectory_setpoint(x=x_final, y=y_final, z=z_final, yaw=0.0)
             time.sleep(20)
             if not self.landing_started:
                 self.get_logger().info(f"Landing on marker near global position: lat={self.global_position[0]:.7f}, lon={self.global_position[1]:.7f}, alt={self.global_position[2]:.2f}")
