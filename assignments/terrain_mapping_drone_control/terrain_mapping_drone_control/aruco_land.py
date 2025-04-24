@@ -212,6 +212,11 @@ class ArucoLandingNode(Node):
             self.arm()
 
         self.publish_offboard_control_mode()
+        sleep(10)
+        x, y, z = self.marker_position
+        x_cur, y_cur, z_cur = self.local_position
+        print(self.marker_position)
+        print(self.local_position)
         x_final, y_final, z_final = 0.0, 5.0, 11.0
         self.publish_trajectory_setpoint(x=x_final, y=y_final, z=z_final, yaw=0.0)
         time.sleep(10)
