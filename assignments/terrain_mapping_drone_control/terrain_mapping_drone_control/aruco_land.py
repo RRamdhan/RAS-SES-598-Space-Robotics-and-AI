@@ -146,6 +146,7 @@ class ArucoLandingNode(Node):
             y_enu,
             z_enu)
         self.get_logger().debug(f"Global position: lat={self.global_position[0]:.7f}, lon={self.global_position[1]:.7f}, alt={self.global_position[2]:.2f}")
+        
     def vehicle_status_callback(self, msg):
         pass
 
@@ -205,6 +206,7 @@ class ArucoLandingNode(Node):
         if self.marker_position:
             x, y, z = self.marker_position
             self.publish_trajectory_setpoint(x=x, y=y, z=0.3, yaw=0.0)
+            time.sleep(20)
             if not self.landing_started:
                 self.get_logger().info(f"Landing on marker near global position: lat={self.global_position[0]:.7f}, lon={self.global_position[1]:.7f}, alt={self.global_position[2]:.2f}")
                 self.publish_vehicle_command(VehicleCommand.VEHICLE_CMD_NAV_LAND)
