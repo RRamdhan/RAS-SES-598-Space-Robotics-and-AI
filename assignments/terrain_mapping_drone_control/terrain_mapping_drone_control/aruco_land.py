@@ -217,11 +217,12 @@ class ArucoLandingNode(Node):
             x, y, z = self.marker_position
             x_cur, y_cur, z_cur = self.local_position
             # x_final, y_final, z_final = x_cur - x, y_cur - y, z_cur
-            x_final, y_final, z_final = 0.08, 5.0, -11.0
+            x_final, y_final, z_final = 0.08, 5.0, 11.0
             self.publish_trajectory_setpoint(x=x_final, y=y_final, z=z_final, yaw=0.0)
             time.sleep(10)
             if not self.landing_started:
-                self.get_logger().info(f"Landing on marker near global position: lat={self.global_position[0]:.7f}, lon={self.global_position[1]:.7f}, alt={self.global_position[2]:.2f}")
+                # self.get_logger().info(f"Landing on marker near global position: lat={self.global_position[0]:.7f}, lon={self.global_position[1]:.7f}, alt={self.global_position[2]:.2f}")
+                time.sleep(10)
                 self.publish_vehicle_command(VehicleCommand.VEHICLE_CMD_NAV_LAND)
                 self.landing_started = True
         else:
