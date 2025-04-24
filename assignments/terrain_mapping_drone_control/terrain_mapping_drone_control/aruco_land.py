@@ -217,7 +217,7 @@ class ArucoLandingNode(Node):
             x, y, z = self.marker_position
             x_cur, y_cur, z_cur = self.local_position
             # x_final, y_final, z_final = x_cur - x, y_cur - y, z_cur
-            x_final, y_final, z_final =0, 5, -11
+            x_final, y_final, z_final = 0.08, 5.0, -11.0
             self.publish_trajectory_setpoint(x=x_final, y=y_final, z=z_final, yaw=0.0)
             time.sleep(10)
             if not self.landing_started:
