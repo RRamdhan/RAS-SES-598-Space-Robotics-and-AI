@@ -220,7 +220,7 @@ class ArucoLandingNode(Node):
         # self.get_logger().info(f"Landing on marker near global position: lat={self.global_position[0]:.7f}, lon={self.global_position[1]:.7f}, alt={self.global_position[2]:.2f}")
         print(self.marker_position)
         print(self.local_position)
-        # x_final, y_final, z_final = 0.17, 5.0, -11.0
+        x_final, y_final, z_final = 0.17, 5.0, -11.0
         self.publish_trajectory_setpoint(x=x_final, y=y_final, z=z_final, yaw=0.0)
         time.sleep(10)
         self.publish_vehicle_command(VehicleCommand.VEHICLE_CMD_NAV_LAND)
