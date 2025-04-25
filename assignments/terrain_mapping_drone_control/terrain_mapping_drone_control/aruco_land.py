@@ -212,7 +212,7 @@ class ArucoLandingNode(Node):
             self.arm()
 
         self.publish_offboard_control_mode()
-        sleep(5)
+        time.sleep(5)
         x, y, z = self.marker_position
         x_cur, y_cur, z_cur = self.local_position
         self.get_logger().info(f"Landing on marker near local position: lat={self.local_position[0]:.7f}, lon={self.local_position[1]:.7f}, alt={self.local_position[2]:.2f}")
