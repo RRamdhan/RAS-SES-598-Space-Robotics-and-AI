@@ -200,6 +200,11 @@ class ArucoLandingNode(Node):
                 self.get_logger().info(f"Current local position: x={self.local_position[0]:.2f}, y={self.local_position[1]:.2f}, z={self.local_position[2]:.2f}")
 
                 # These work for the top pillar
+                x_final = -x_marker + x_cur
+                y_final = -y_marker + y_cur
+                z_final = z_cur - 1.0
+                
+                # These work for the top pillar
                 # x_final = 0.0 #x_cur + x_marker
                 # y_final = 5.0  #y_cur + y_marker
                 # z_final = -11.0  #z_cur - 1.0
