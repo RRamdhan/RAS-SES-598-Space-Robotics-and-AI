@@ -10,7 +10,6 @@ from geometry_msgs.msg import TransformStamped, Point
 from tf2_ros import TransformBroadcaster
 from std_msgs.msg import String
 from transforms3d.euler import mat2euler
-from transforms3d.quaternions import quat2mat
 import math
 from rclpy.qos import QoSProfile, QoSReliabilityPolicy, QoSHistoryPolicy
 from px4_msgs.msg import VehicleLocalPosition
@@ -35,7 +34,7 @@ class ArucoTracker(Node):
         self.calibration_received = False
 
         self.marker_size = 0.8
-        self.current_local_position = None
+        self.latest_drone_position = None
 
         self.debug_image_pub = self.create_publisher(Image, '/aruco/debug_image', 10)
         self.marker_pose_pub = self.create_publisher(String, '/aruco/marker_pose', 10)
@@ -47,7 +46,7 @@ class ArucoTracker(Node):
         self.create_subscription(VehicleLocalPosition, '/fmu/out/vehicle_local_position', self.local_position_callback, 10)
 
     def local_position_callback(self, msg):
-        self.current_local_position = (msg.x, msg.y, msg.z)
+        self.latest_drone_position = (msg.x, msg.y, msg.z)
 
     def image_callback(self, msg):
         if not self.calibration_received:
@@ -76,12 +75,12 @@ class ArucoTracker(Node):
                         rot_matrix, _ = cv2.Rodrigues(rvec)
                         euler_angles = mat2euler(rot_matrix)
 
-                        # If we have the drone's local position, convert marker pose to ENU
-                        if self.current_local_position:
-                            marker_position = tvec.flatten()
-                            x_enu = self.current_local_position[0] + marker_position[0]
-                            y_enu = self.current_local_position[1] + marker_position[1]
-                            z_enu = self.current_local_position[2] + marker_position[2]
+                        marker_position_cam = tvec.flatten()
+
+                        if self.latest_drone_position is not None:
+                            x_enu = self.latest_drone_position[0] + marker_position_cam[2]
+                            y_enu = self.latest_drone_position[1] - marker_position_cam[0]
+                            z_enu = self.latest_drone_position[2] - marker_position_cam[1]
 
                             pose_msg = String()
                             pose_msg.data = f"Marker {ids[i][0]} ENU position: x={x_enu:.2f}, y={y_enu:.2f}, z={z_enu:.2f}"
