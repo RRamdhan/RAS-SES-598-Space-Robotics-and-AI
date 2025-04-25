@@ -51,7 +51,7 @@ class ArucoLandingNode(Node):
             VehicleGlobalPosition, '/fmu/out/vehicle_global_position',
             self.global_position_callback, qos_profile)
         self.local_position_subscriber = self.create_subscription(
-            VehicleGlobalPosition, '/fmu/out/vehicle_local_position',
+            VehicleLocalPosition, '/fmu/out/vehicle_local_position',
             self.local_position_callback, qos_profile)
         self.aruco_subscriber = self.create_subscription(
             String, '/aruco/marker_pose', self.marker_callback, qos_default)
