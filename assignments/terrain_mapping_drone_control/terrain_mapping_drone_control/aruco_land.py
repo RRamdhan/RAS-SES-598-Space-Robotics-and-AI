@@ -202,7 +202,7 @@ class ArucoLandingNode(Node):
                 self.state = LandingState.LANDING
 
         elif self.state == LandingState.LANDING:
-            if (now - self.phase_start_time).nanoseconds / 1e9 > 5.0 and not self.landing_started:
+            if (now - self.phase_start_time).nanoseconds / 1e9 > 10.0 and not self.landing_started:
                 self.publish_vehicle_command(VehicleCommand.VEHICLE_CMD_NAV_LAND)
                 self.landing_started = True
 
