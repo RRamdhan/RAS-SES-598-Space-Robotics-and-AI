@@ -85,6 +85,8 @@ class ArucoLandingNode(Node):
 
     def local_position_callback(self, msg):
         self.local_position = (msg.x, msg.y, msg.z)
+        self.get_logger().info(dir(msg))
+        # self.get_logger().info(f" Obtain local position: x={self.local_position[0]:.2f}, y={self.local_position[1]:.2f}, z={self.local_position[2]:.2f}")
 
     def odom_callback(self, msg):
         self.current_position = (
