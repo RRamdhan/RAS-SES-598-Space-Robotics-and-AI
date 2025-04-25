@@ -30,7 +30,7 @@ class ArucoTracker(Node):
         try:
             # ArUco dictionary and parameters (OpenCV 4.7+)
             self.aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)
-            self.aruco_params = cv2.aruco.DetectorParameters_create()
+            self.aruco_params = cv2.aruco.DetectorParameters()
         except Exception as e:
             self.get_logger().error(f"Failed to initialize ArUco: {e}")
             return
