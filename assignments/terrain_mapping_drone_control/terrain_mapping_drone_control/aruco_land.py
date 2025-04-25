@@ -5,7 +5,7 @@ from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy, DurabilityPo
 import math
 from enum import Enum, auto
 
-from px4_msgs.msg import VehicleOdometry, OffboardControlMode, VehicleCommand, VehicleStatus, TrajectorySetpoint, VehicleGlobalPosition
+from px4_msgs.msg import VehicleOdometry, OffboardControlMode, VehicleCommand, VehicleStatus, TrajectorySetpoint, VehicleGlobalPosition, VehicleLocalPosition
 from std_msgs.msg import String
 from nav_msgs.msg import Odometry
 
