@@ -206,81 +206,81 @@ class ArucoLandingNode(Node):
         msg.timestamp = int(self.get_clock().now().nanoseconds / 1000)
         self.vehicle_command_publisher.publish(msg)
 
-    # def timer_callback(self):
-    #     if self.offboard_setpoint_counter == 10:
-    #         self.engage_offboard_mode()
-    #         self.arm()
-
-    #     self.publish_offboard_control_mode()
-    #     sleep(10)
-    #     x, y, z = self.marker_position
-    #     x_cur, y_cur, z_cur = self.local_position
-    #     self.get_logger().info(f"Landing on marker near local position: lat={self.local_position[0]:.7f}, lon={self.local_position[1]:.7f}, alt={self.local_position[2]:.2f}")
-        
-    #     # self.get_logger().info(f"Landing on marker near global position: lat={self.global_position[0]:.7f}, lon={self.global_position[1]:.7f}, alt={self.global_position[2]:.2f}")
-    #     print(self.marker_position)
-    #     print(self.local_position)
-    #     x_final, y_final, z_final = 0.0, 5.0, -11.0
-    #     self.publish_trajectory_setpoint(x=x_final, y=y_final, z=z_final, yaw=0.0)
-    #     time.sleep(10)
-    #     self.publish_vehicle_command(VehicleCommand.VEHICLE_CMD_NAV_LAND)
-    #     time.sleep(10)
-    #     self.landing_started = True
-        
-    #     if self.marker_position:
-    #         x, y, z = self.marker_position
-    #         x_cur, y_cur, z_cur = self.local_position
-    #         # x_final, y_final, z_final = x_cur - x, y_cur - y, z_cur
-    #         x_final, y_final, z_final = 0.08, 5.0, 11.0
-    #         self.publish_trajectory_setpoint(x=x_final, y=y_final, z=z_final, yaw=0.0)
-    #         time.sleep(10)
-    #         if not self.landing_started:
-    #             # self.get_logger().info(f"Landing on marker near global position: lat={self.global_position[0]:.7f}, lon={self.global_position[1]:.7f}, alt={self.global_position[2]:.2f}")
-    #             time.sleep(10)
-    #             self.publish_vehicle_command(VehicleCommand.VEHICLE_CMD_NAV_LAND)
-    #             self.landing_started = True
-    #     else:
-    #         cx, cy, cz = self.current_position
-    #         # self.get_logger().info(f"Waiting for ArUco marker... Local pos: x={cx:.2f}, y={cy:.2f}, z={cz:.2f} | Global pos: lat={self.global_position[0]:.7f}, lon={self.global_position[1]:.7f}, alt={self.global_position[2]:.2f}")
-
-    #     self.offboard_setpoint_counter += 1
-
     def timer_callback(self):
-        self.publish_offboard_control_mode()
-    
-        # Wait for 10 cycles before engaging offboard and arming
         if self.offboard_setpoint_counter == 10:
             self.engage_offboard_mode()
             self.arm()
+
+        self.publish_offboard_control_mode()
+        sleep(5)
+        x, y, z = self.marker_position
+        x_cur, y_cur, z_cur = self.local_position
+        self.get_logger().info(f"Landing on marker near local position: lat={self.local_position[0]:.7f}, lon={self.local_position[1]:.7f}, alt={self.local_position[2]:.2f}")
         
+        # self.get_logger().info(f"Landing on marker near global position: lat={self.global_position[0]:.7f}, lon={self.global_position[1]:.7f}, alt={self.global_position[2]:.2f}")
+        print(self.marker_position)
+        print(self.local_position)
+        # x_final, y_final, z_final = 0.17, 5.0, -11.0
+        self.publish_trajectory_setpoint(x=x_final, y=y_final, z=z_final, yaw=0.0)
+        time.sleep(10)
+        self.publish_vehicle_command(VehicleCommand.VEHICLE_CMD_NAV_LAND)
+        time.sleep(10)
+        self.landing_started = True
+        
+        if self.marker_position:
+            x, y, z = self.marker_position
+            x_cur, y_cur, z_cur = self.local_position
+            # x_final, y_final, z_final = x_cur - x, y_cur - y, z_cur
+            x_final, y_final, z_final = 0.08, 5.0, 11.0
+            self.publish_trajectory_setpoint(x=x_final, y=y_final, z=z_final, yaw=0.0)
+            time.sleep(10)
+            if not self.landing_started:
+                # self.get_logger().info(f"Landing on marker near global position: lat={self.global_position[0]:.7f}, lon={self.global_position[1]:.7f}, alt={self.global_position[2]:.2f}")
+                time.sleep(10)
+                self.publish_vehicle_command(VehicleCommand.VEHICLE_CMD_NAV_LAND)
+                self.landing_started = True
+        else:
+            cx, cy, cz = self.current_position
+            # self.get_logger().info(f"Waiting for ArUco marker... Local pos: x={cx:.2f}, y={cy:.2f}, z={cz:.2f} | Global pos: lat={self.global_position[0]:.7f}, lon={self.global_position[1]:.7f}, alt={self.global_position[2]:.2f}")
+
         self.offboard_setpoint_counter += 1
+
+    # def timer_callback(self):
+    #     self.publish_offboard_control_mode()
     
-        # Check that both positions are valid before proceeding
-        if not hasattr(self, 'marker_position') or not hasattr(self, 'local_position'):
-            self.get_logger().info("Waiting for marker and local position data...")
-            return
+    #     # Wait for 10 cycles before engaging offboard and arming
+    #     if self.offboard_setpoint_counter == 10:
+    #         self.engage_offboard_mode()
+    #         self.arm()
+        
+    #     self.offboard_setpoint_counter += 1
     
-        x_marker, y_marker, z_marker = self.marker_position
-        x_drone, y_drone, z_drone = self.local_position
+    #     # Check that both positions are valid before proceeding
+    #     if not hasattr(self, 'marker_position') or not hasattr(self, 'local_position'):
+    #         self.get_logger().info("Waiting for marker and local position data...")
+    #         return
     
-        # Compute relative offset to marker (optional: smooth/average this if marker is noisy)
-        x_offset = x_marker - x_drone
-        y_offset = y_marker - y_drone
-        z_target = z_marker + 1.0  # hover 1 meter above the marker before landing
+    #     x_marker, y_marker, z_marker = self.marker_position
+    #     x_drone, y_drone, z_drone = self.local_position
     
-        self.get_logger().info(f"Marker detected at offset: dx={x_offset:.2f}, dy={y_offset:.2f}")
+    #     # Compute relative offset to marker (optional: smooth/average this if marker is noisy)
+    #     x_offset = x_marker - x_drone
+    #     y_offset = y_marker - y_drone
+    #     z_target = z_marker + 1.0  # hover 1 meter above the marker before landing
     
-        # Move towards marker
-        self.publish_trajectory_setpoint(
-            x=x_marker, y=y_marker, z=z_target, yaw=0.0
-        )
-        time.sleep(5)
+    #     self.get_logger().info(f"Marker detected at offset: dx={x_offset:.2f}, dy={y_offset:.2f}")
     
-        # Initiate landing
-        if not self.landing_started:
-            self.get_logger().info("Initiating landing...")
-            self.publish_vehicle_command(VehicleCommand.VEHICLE_CMD_NAV_LAND)
-            self.landing_started = True
+    #     # Move towards marker
+    #     self.publish_trajectory_setpoint(
+    #         x=x_marker, y=y_marker, z=z_target, yaw=0.0
+    #     )
+    #     time.sleep(5)
+    
+    #     # Initiate landing
+    #     if not self.landing_started:
+    #         self.get_logger().info("Initiating landing...")
+    #         self.publish_vehicle_command(VehicleCommand.VEHICLE_CMD_NAV_LAND)
+    #         self.landing_started = True
         
 def main():
     print('Starting ArUco landing node...')
