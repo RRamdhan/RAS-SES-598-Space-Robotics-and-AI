@@ -9,106 +9,105 @@ import numpy as np
 from geometry_msgs.msg import TransformStamped, Point
 from tf2_ros import TransformBroadcaster
 from std_msgs.msg import String
-from transforms3d.euler import mat2euler, euler2quat
-from transforms3d.quaternions import mat2quat
+from transforms3d.euler import mat2euler
+from transforms3d.quaternions import quat2mat
 import math
 from rclpy.qos import QoSProfile, QoSReliabilityPolicy, QoSHistoryPolicy
+from px4_msgs.msg import VehicleLocalPosition
 
 class ArucoTracker(Node):
     def __init__(self):
         super().__init__('aruco_tracker')
 
-        # Initialize CV bridge
         self.cv_bridge = CvBridge()
-
-        # Frame counter for logging
         self.frame_counter = 0
 
-        # Print OpenCV version for debugging
-        self.get_logger().info(f'OpenCV version: {cv2.__version__}')
+        self.aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)
+        self.aruco_params = cv2.aruco.DetectorParameters()
+        self.detector = cv2.aruco.ArucoDetector(self.aruco_dict, self.aruco_params)
 
-        try:
-            # ArUco dictionary and parameters (OpenCV 4.7+)
-            self.aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)
-            self.aruco_params = cv2.aruco.DetectorParameters()
-        except Exception as e:
-            self.get_logger().error(f"Failed to initialize ArUco: {e}")
-            return
+        self.camera_matrix = np.array([
+            [554.254691191187, 0.0, 320.5],
+            [0.0, 554.254691191187, 240.5],
+            [0.0, 0.0, 1.0]
+        ])
+        self.dist_coeffs = np.zeros(5)
+        self.calibration_received = False
 
-        # TF broadcaster
-        self.br = TransformBroadcaster(self)
+        self.marker_size = 0.8
+        self.current_local_position = None
 
-        # Subscription to camera image
-        qos_profile = QoSProfile(
-            reliability=QoSReliabilityPolicy.BEST_EFFORT,
-            history=QoSHistoryPolicy.KEEP_LAST,
-            depth=1
-        )
-        self.create_subscription(Image, '/camera/image_raw', self.image_callback, qos_profile)
-        self.create_subscription(CameraInfo, '/camera/camera_info', self.camera_info_callback, qos_profile)
+        self.debug_image_pub = self.create_publisher(Image, '/aruco/debug_image', 10)
+        self.marker_pose_pub = self.create_publisher(String, '/aruco/marker_pose', 10)
+        self.tf_broadcaster = TransformBroadcaster(self)
 
-        self.camera_matrix = None
-        self.dist_coeffs = None
+        self.create_subscription(Image, '/drone/down_mono', self.image_callback, 10)
+        camera_info_qos = QoSProfile(reliability=QoSReliabilityPolicy.RELIABLE, history=QoSHistoryPolicy.KEEP_LAST, depth=10)
+        self.create_subscription(CameraInfo, '/drone/down_mono/camera_info', self.camera_info_callback, qos_profile=camera_info_qos)
+        self.create_subscription(VehicleLocalPosition, '/fmu/out/vehicle_local_position', self.local_position_callback, 10)
 
-    def camera_info_callback(self, msg):
-        self.camera_matrix = np.array(msg.k).reshape((3, 3))
-        self.dist_coeffs = np.array(msg.d)
-        self.get_logger().info("Camera info received.")
+    def local_position_callback(self, msg):
+        self.current_local_position = (msg.x, msg.y, msg.z)
 
     def image_callback(self, msg):
-        if self.camera_matrix is None or self.dist_coeffs is None:
-            return
+        if not self.calibration_received:
+            self.get_logger().debug('Using default camera calibration')
 
         try:
-            frame = self.cv_bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
+            cv_image = self.cv_bridge.imgmsg_to_cv2(msg, 'mono8')
+            self.frame_counter += 1
+            corners, ids, rejected = self.detector.detectMarkers(cv_image)
+            debug_image = cv2.cvtColor(cv_image, cv2.COLOR_GRAY2BGR)
+
+            if ids is not None:
+                for i in range(len(ids)):
+                    objPoints = np.array([
+                        [-self.marker_size/2, self.marker_size/2, 0],
+                        [self.marker_size/2, self.marker_size/2, 0],
+                        [self.marker_size/2, -self.marker_size/2, 0],
+                        [-self.marker_size/2, -self.marker_size/2, 0]
+                    ], dtype=np.float32)
+                    imgPoints = corners[i].reshape((4,2))
+
+                    success, rvec, tvec = cv2.solvePnP(objPoints, imgPoints, self.camera_matrix, self.dist_coeffs)
+                    if success:
+                        cv2.drawFrameAxes(debug_image, self.camera_matrix, self.dist_coeffs, rvec, tvec, self.marker_size/2)
+
+                        rot_matrix, _ = cv2.Rodrigues(rvec)
+                        euler_angles = mat2euler(rot_matrix)
+
+                        # If we have the drone's local position, convert marker pose to ENU
+                        if self.current_local_position:
+                            marker_position = tvec.flatten()
+                            x_enu = self.current_local_position[0] + marker_position[0]
+                            y_enu = self.current_local_position[1] + marker_position[1]
+                            z_enu = self.current_local_position[2] + marker_position[2]
+
+                            pose_msg = String()
+                            pose_msg.data = f"Marker {ids[i][0]} ENU position: x={x_enu:.2f}, y={y_enu:.2f}, z={z_enu:.2f}"
+                            self.marker_pose_pub.publish(pose_msg)
+                            self.get_logger().info(pose_msg.data)
+
+            debug_msg = self.cv_bridge.cv2_to_imgmsg(debug_image, encoding='bgr8')
+            debug_msg.header = msg.header
+            self.debug_image_pub.publish(debug_msg)
+
         except Exception as e:
-            self.get_logger().error(f"CV Bridge error: {e}")
-            return
+            self.get_logger().error(f'Error processing image: {str(e)}')
 
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        corners, ids, rejected = cv2.aruco.detectMarkers(gray, self.aruco_dict, parameters=self.aruco_params)
+    def camera_info_callback(self, msg):
+        try:
+            self.camera_matrix = np.array(msg.k).reshape(3, 3)
+            self.dist_coeffs = np.array(msg.d)
+            self.calibration_received = True
+            self.get_logger().info('Camera calibration received')
+        except Exception as e:
+            self.get_logger().error(f'Error processing camera calibration: {str(e)}')
 
-        if ids is not None:
-            for i, corner in enumerate(corners):
-                rvec, tvec, _ = cv2.aruco.estimatePoseSingleMarkers(corner, 0.15, self.camera_matrix, self.dist_coeffs)
-                rvec = rvec[0][0]
-                tvec = tvec[0][0]
-
-                # Convert rotation vector to rotation matrix
-                rmat, _ = cv2.Rodrigues(rvec)
-
-                # Convert rotation matrix to quaternion using transforms3d
-                quat = mat2quat(rmat)  # [w, x, y, z]
-                qx, qy, qz, qw = quat[1], quat[2], quat[3], quat[0]
-
-                # Broadcast transform
-                transform_stamped = TransformStamped()
-                transform_stamped.header.stamp = self.get_clock().now().to_msg()
-                transform_stamped.header.frame_id = "camera_link"
-                transform_stamped.child_frame_id = f"aruco_marker_{ids[i][0]}"
-
-                transform_stamped.transform.translation.x = tvec[0]
-                transform_stamped.transform.translation.y = tvec[1]
-                transform_stamped.transform.translation.z = tvec[2]
-                transform_stamped.transform.rotation.x = qx
-                transform_stamped.transform.rotation.y = qy
-                transform_stamped.transform.rotation.z = qz
-                transform_stamped.transform.rotation.w = qw
-
-                self.br.sendTransform(transform_stamped)
-                self.get_logger().info(f"Published transform for marker ID {ids[i][0]}")
-
-        self.frame_counter += 1
-        if self.frame_counter % 30 == 0:
-            self.get_logger().info(f"Processed {self.frame_counter} frames.")
-
-def main(args=None):
-    rclpy.init(args=args)
+def main():
+    rclpy.init()
     node = ArucoTracker()
-    try:
-        rclpy.spin(node)
-    except KeyboardInterrupt:
-        pass
+    rclpy.spin(node)
     node.destroy_node()
     rclpy.shutdown()
 
