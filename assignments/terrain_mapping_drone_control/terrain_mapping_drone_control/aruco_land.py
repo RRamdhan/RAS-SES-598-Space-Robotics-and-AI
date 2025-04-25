@@ -193,10 +193,19 @@ class ArucoLandingNode(Node):
         elif self.state == LandingState.MOVING_TO_MARKER:
             if self.marker_position:
                 x_marker, y_marker, z_marker = self.marker_position
+                self.get_logger().info(f"Current marker position: x={self.marker_position[0]:.2f}, y={self.marker_position[1]:.2f}, z={self.marker_position[2]:.2f}")
                 x_cur, y_cur, z_cur = self.local_position
-                x_final = 0.0 #x_cur + x_marker
-                y_final = -5.0  #y_cur + y_marker
-                z_final = -11.0  #z_cur - 1.0
+                self.get_logger().info(f"Current local position: x={self.local_position[0]:.2f}, y={self.local_position[1]:.2f}, z={self.local_position[2]:.2f}")
+
+                # These work for the top pillar
+                # x_final = 0.0 #x_cur + x_marker
+                # y_final = 5.0  #y_cur + y_marker
+                # z_final = -11.0  #z_cur - 1.0
+                
+                # These work for the bottom pillar
+                # x_final = 0.0 #x_cur + x_marker
+                # y_final = -5.0  #y_cur + y_marker
+                # z_final = -11.0  #z_cur - 1.0
                 self.publish_trajectory_setpoint(x=x_final, y=y_final, z=z_final, yaw=0.0)
                 self.phase_start_time = now
                 self.state = LandingState.LANDING
