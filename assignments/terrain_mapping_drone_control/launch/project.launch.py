@@ -604,75 +604,75 @@ def generate_launch_description():
             actions=[spawn_cylinder_front_11]
         ),
         TimerAction(
-            period=6.0,
+            period=5.5,
             actions=[spawn_cylinder_front_12]
         ),
         TimerAction(
-            period=7.0,
+            period=6.0,
             actions=[spawn_cylinder_front_13]
         ),
         TimerAction(
-            period=7.5,
+            period=6.5,
             actions=[spawn_cylinder_front_14]
         ),
         TimerAction(
-            period=8.0,
+            period=7.0,
             actions=[spawn_cylinder_front_20]
         ),
         TimerAction(
-            period=8.5,
+            period=7.5,
             actions=[spawn_cylinder_front_21]
         ),
         TimerAction(
-            period=9.0,
+            period=8.0,
             actions=[spawn_cylinder_front_22]
         ),
         TimerAction(
-            period=9.5,
+            period=8.5,
             actions=[spawn_cylinder_front_23]
         ),
         TimerAction(
-            period=10.0,
+            period=9.0,
             actions=[spawn_cylinder_front_24]
         ),
         TimerAction(
-            period=10.5,
+            period=9.5,
             actions=[spawn_cylinder_front_30]
         ),
         TimerAction(
-            period=11.0,
+            period=10.0,
             actions=[spawn_cylinder_front_31]
         ),
         TimerAction(
-            period=11.5,
+            period=10.5,
             actions=[spawn_cylinder_front_32]
         ),
         TimerAction(
-            period=12.0,
+            period=11.0,
             actions=[spawn_cylinder_front_33]
         ),
         TimerAction(
-            period=12.5,
+            period=11.5,
             actions=[spawn_cylinder_front_34]
         ),
         TimerAction(
-            period=13.0,
+            period=12.0,
             actions=[spawn_cylinder_front_40]
         ),
         TimerAction(
-            period=13.5,
+            period=12.5,
             actions=[spawn_cylinder_front_41]
         ),
         TimerAction(
-            period=14.0,
+            period=13.0,
             actions=[spawn_cylinder_front_42]
         ),
         TimerAction(
-            period=14.5,
+            period=13.5,
             actions=[spawn_cylinder_front_43]
         ),
         TimerAction(
-            period=15.0,
+            period=14.0,
             actions=[spawn_cylinder_front_44]
         ),
         # TimerAction(
@@ -680,7 +680,7 @@ def generate_launch_description():
         #     actions=[spawn_cylinder_back]
         # ),
         TimerAction(
-            period=3.0,
+            period=14.5,
             actions=[bridge]
         )
     ]) 
