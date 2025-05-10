@@ -29,6 +29,80 @@ def generate_launch_description():
         output='screen'
     )
 
+    # Spawn the second cylinder (behind, 7m height)
+    spawn_cylinder_rgb1 = Node(
+        package='ros_gz_sim',
+        executable='create',
+        arguments=[
+            '-file', os.path.join(gz_model_path, 'cylinder_short_rgb', 'model.sdf'),
+            '-name', 'spawn_cylinder_rgb1',
+            '-x', '7.5',    # 5 meters behind the drone
+            '-y', '7.5',     # centered on y-axis
+            '-z', '0',     # at ground level
+            '-R', '0',     # no roll
+            '-P', '0',     # no pitch
+            '-Y', '0',     # no yaw
+            '-static'      # ensure it's static
+        ],
+        output='screen'
+    )
+
+
+    # Spawn the second cylinder (behind, 7m height)
+    spawn_cylinder_rgb2 = Node(
+        package='ros_gz_sim',
+        executable='create',
+        arguments=[
+            '-file', os.path.join(gz_model_path, 'cylinder_short_rgb', 'model.sdf'),
+            '-name', 'spawn_cylinder_rgb2',
+            '-x', '12.5',    # 5 meters behind the drone
+            '-y', '2.5',     # centered on y-axis
+            '-z', '0',     # at ground level
+            '-R', '0',     # no roll
+            '-P', '0',     # no pitch
+            '-Y', '0',     # no yaw
+            '-static'      # ensure it's static
+        ],
+        output='screen'
+    )
+
+
+    # Spawn the second cylinder (behind, 7m height)
+    spawn_cylinder_rgb3 = Node(
+        package='ros_gz_sim',
+        executable='create',
+        arguments=[
+            '-file', os.path.join(gz_model_path, 'cylinder_short_rgb', 'model.sdf'),
+            '-name', 'spawn_cylinder_rgb3',
+            '-x', '17.5',    # 5 meters behind the drone
+            '-y', '-2.5',     # centered on y-axis
+            '-z', '0',     # at ground level
+            '-R', '0',     # no roll
+            '-P', '0',     # no pitch
+            '-Y', '0',     # no yaw
+            '-static'      # ensure it's static
+        ],
+        output='screen'
+    )
+
+    # Spawn the second cylinder (behind, 7m height)
+    spawn_cylinder_rgb4 = Node(
+        package='ros_gz_sim',
+        executable='create',
+        arguments=[
+            '-file', os.path.join(gz_model_path, 'cylinder_short_rgb', 'model.sdf'),
+            '-name', 'spawn_cylinder_rgb4',
+            '-x', '22.5',    # 5 meters behind the drone
+            '-y', '-7.5',     # centered on y-axis
+            '-z', '0',     # at ground level
+            '-R', '0',     # no roll
+            '-P', '0',     # no pitch
+            '-Y', '0',     # no yaw
+            '-static'      # ensure it's static
+        ],
+        output='screen'
+    )
+
     # Spawn the first cylinder (front, full height)
     spawn_cylinder_front_00 = Node(
         package='ros_gz_sim',
@@ -681,6 +755,22 @@ def generate_launch_description():
         # ),
         TimerAction(
             period=14.5,
+            actions=[spawn_cylinder_rgb1]
+        ),
+        TimerAction(
+            period=15.0,
+            actions=[spawn_cylinder_rgb2]
+        ),
+        TimerAction(
+            period=15.5,
+            actions=[spawn_cylinder_rgb3]
+        ),
+        TimerAction(
+            period=16.0,
+            actions=[spawn_cylinder_rgb4]
+        ),
+        TimerAction(
+            period=16.5,
             actions=[bridge]
         )
     ]) 

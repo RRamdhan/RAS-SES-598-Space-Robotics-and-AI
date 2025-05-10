@@ -65,7 +65,25 @@ def generate_launch_description():
         ],
         output='screen'
     )
-       
+
+    # # Spawn the second cylinder (behind, 7m height)
+    # spawn_cylinder_back1 = Node(
+    #     package='ros_gz_sim',
+    #     executable='create',
+    #     arguments=[
+    #         '-file', os.path.join(gz_model_path, 'cylinder_short_rgb', 'model.sdf'),
+    #         '-name', 'cylinder_back1',
+    #         '-x', '-10',    # 5 meters behind the drone
+    #         '-y', '0',     # centered on y-axis
+    #         '-z', '0',     # at ground level
+    #         '-R', '0',     # no roll
+    #         '-P', '0',     # no pitch
+    #         '-Y', '0',     # no yaw
+    #         '-static'      # ensure it's static
+    #     ],
+    #     output='screen'
+    # )
+
     # Bridge node for camera and odometry
     bridge = Node(
         package='ros_gz_bridge',
@@ -142,8 +160,13 @@ def generate_launch_description():
             period=2.5,
             actions=[spawn_cylinder_back]
         ),
+        # TimerAction(
+        #     period=3.0,
+        #     actions=[spawn_cylinder_back1]
+        # ),
         TimerAction(
             period=3.0,
             actions=[bridge]
-        )
+        ),
+
     ]) 
