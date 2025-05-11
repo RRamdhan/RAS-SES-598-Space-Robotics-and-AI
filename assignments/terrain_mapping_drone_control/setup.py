@@ -47,6 +47,14 @@ setup(
             glob('models/cylinder_short_rgb/materials/*.*')),
         ('share/' + package_name + '/models/cylinder_short_rgb/materials/textures',
             glob('models/cylinder_short_rgb/materials/textures/*.*')),
+
+        ('share/' + package_name + '/models/cylinder_project',
+            glob('models/cylinder_project/*.*')),
+        ('share/' + package_name + '/models/cylinder_project/materials',
+            glob('models/cylinder_project/materials/*.*')),
+        ('share/' + package_name + '/models/cylinder_project/materials/textures',
+            glob('models/cylinder_project/materials/textures/*.*')),
+
     ],
     install_requires=['setuptools'],
     zip_safe=True,
