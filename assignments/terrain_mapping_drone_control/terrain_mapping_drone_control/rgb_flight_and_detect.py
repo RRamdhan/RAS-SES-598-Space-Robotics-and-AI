@@ -279,12 +279,18 @@ class RGBFlightNode(Node):
                 (-7.5, 12.0, -3.0),  # O
                 (-7.5, 6.0, -3.0),   # P
                 (-7.5, 0.0, -3.0),   # Q
-                (-5.0, 0.0, -3.0),   # R
+                (-12.0, 0.0, -3.0),  # R
+                (-12.0, 6.0, -3.0),  # S
+                (-12.0, 12.0, -3.0), # T
+                (-7.5, 12.0, -3.0),  # U
+                (-7.5, 6.0, -3.0),   # V
+                (-7.5, 0.0, -3.0),   # W
+                (-5.0, 0.0, -3.0),   # X
                 (0.0, 0.0, -3.0)     # Final point
             ]
             waypoint_labels = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', \
                                'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', \
-                               'Final']
+                               'S', 'T', 'U', 'V', 'W', 'X', 'Final']
 
             if self.waypoint_index < len(waypoints):
                 # Check if enough time has passed to move to the next waypoint
